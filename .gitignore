@@ -1,0 +1,29 @@
+# Django #
+*.log
+*.pot
+*.pyc
+__pycache__
+db.sqlite3
+media
+
+# Backup files # 
+*.bak
+
+# Python # 
+*.py[cod] 
+*$py.class 
+
+# Jupyter Notebook 
+.ipynb_checkpoints 
+
+# pyenv 
+.python-version 
+
+# Environments 
+.venv
+venv/
+
+# Visual Studio Code # 
+.vscode/*
+.vscode
+vscode/
