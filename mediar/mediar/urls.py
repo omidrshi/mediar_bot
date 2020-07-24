@@ -1,4 +1,4 @@
-"""mybooks URL Configuration
+"""mediar URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/3.0/topics/http/urls/
@@ -24,4 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('bot/webhook', csrf_exempt(Webhook.as_view())),
     path('bot/set-webhook', csrf_exempt(SetWebhook.as_view())),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

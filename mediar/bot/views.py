@@ -4,9 +4,10 @@ import requests
 from django.http import JsonResponse
 from django.views import View
 from .models import Chat, Media
+
 TELEGRAM_URL = "https://api.telegram.org/bot"
 TUTORIAL_BOT_TOKEN = "1380036001:AAHWFdMS1SZ7b1ATUdC9KF_xqwOjmUwL-ck"
-BASE_URL = "https://8f4e898a6fc7.ngrok.io"
+BASE_URL = "https://mediar.pythonanywhere.com"
 
 # https://api.telegram.org/bot<token>/setWebhook?url=<url>/webhooks/tutorial/
 
