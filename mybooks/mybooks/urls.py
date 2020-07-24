@@ -15,7 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from bot.views import Webhook, SetWebhook
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-]
+    path('bot/webhook', csrf_exempt(Webhook.as_view())),
+    path('bot/set-webhook', csrf_exempt(SetWebhook.as_view())),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
