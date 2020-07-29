@@ -7,9 +7,9 @@ from .models import Chat, Media
 from django.db.models import Q
 
 TELEGRAM_URL = "https://api.telegram.org/bot"
-TUTORIAL_BOT_TOKEN = "1380036001:AAHWFdMS1SZ7b1ATUdC9KF_xqwOjmUwL-ck"
+TUTORIAL_BOT_TOKEN = "1373827281:AAEwxMUTNNMeK34sOAVMfAaq6lnw0wLKF3c"
 BASE_URL = "https://mediar.pythonanywhere.com"
-CHANNEL_ID = "@dimorgan64"
+CHANNEL_ID = "@mediargroup"
 
 # https://api.telegram.org/bot<token>/setWebhook?url=<url>/webhooks/tutorial/
 
@@ -30,7 +30,7 @@ class Webhook(View):
         'one_time_keyboard': True
     }
 
-    WELCOME_MESSAGE = "سلام به ربات مدیار خوش آمدید لطفا نام کتاب ، پادکست ، فیلم و تصویر مورد نظر را وارد کنید تا برای شما جستجو کنیم ..."
+    WELCOME_MESSAGE = "برای جستجو کافیه عنوان کتاب یا نویسنده ی دلخواهتو وارد کنی. یادت باشه با جستجوی فارسی، کتاب های به زبان فارسی نمایش داده میشه. پس برای کتاب های انگلیسی، عنوان یا نویسنده رو انگلیسی جستجو کن."
 
     def post(self, request, *args, **kwargs):
 
@@ -40,10 +40,10 @@ class Webhook(View):
         if 'callback_query' in t_data:
             if 'data' in t_data['callback_query'] and t_data['callback_query']['data'] == 'joined':
                 if self.check_channel_member(CHANNEL_ID, t_data['callback_query']['from']['id']):
-                    self.send_answer_to_callback(t_data['callback_query']['id'], 'ba tashakor')
+                    self.send_answer_to_callback(t_data['callback_query']['id'], 'تبریک ... شما عضو مدیار شدید')
                     self.send_message(self.WELCOME_MESSAGE, t_data['callback_query']['message']['chat']['id'], '')
                 else:
-                    self.send_answer_to_callback(t_data['callback_query']['id'], 'Nashodi hanooz')
+                    self.send_answer_to_callback(t_data['callback_query']['id'], 'هنوز عضو کانال نشده اید !')
             self.send_answer_to_callback(t_data['callback_query']['id'], '')
             return JsonResponse({"ok": "POST request processed"})
 
@@ -66,17 +66,22 @@ class Webhook(View):
             self.send_message_to_join_channel(chat_obj.chat_id)
             return JsonResponse({"ok": "POST request processed"})
 
+        print(t_message)
         # Check if admin uploads a file
-        if chat_obj.is_admin:
+        if chat_obj.is_admin and "document" in t_message:
             self.check_file_uploading(t_message)
-
-        try:
-            text = t_message["text"].strip().lower()
-        except Exception as e:
             return JsonResponse({"ok": "POST request processed"})
 
+        text = t_message["text"]
+
+        if text[0] == "📚":
+            media = Media.objects.filter(title=text[2:]).first()
+            if media:
+                self.send_document(media.file_id, chat_obj.chat_id, media.title)
+                return JsonResponse({"ok": "POST request processed"})
+
         results = self.search_in_database(text)
-        self.send_message(f'{len(results)} مورد یافت شد :', chat_obj.chat_id, results)
+        self.send_message(f'{len(results)} مورد یافت شد ، حالا کتاب مورد نظر خودتو انتخاب کن. اگه چیزی که میخوای توی لیست نبود اصلا نگران نباش! ما در اسرع وقت برات حاضرش میکنیم!', chat_obj.chat_id, results)
         return JsonResponse({"ok": "POST request processed"})
 
     @ staticmethod
@@ -89,22 +94,21 @@ class Webhook(View):
         data = {
             "chat_id": chat_id,
             "text": message,
-            'reply_markup': json.dumps(reply_markup),
+            'reply_markup': json.dumps(reply_markup) if reply_markup['keyboard'] != '' else None,
             "parse_mode": "Markdown",
         }
         response = requests.post(
             f"{TELEGRAM_URL}{TUTORIAL_BOT_TOKEN}/sendMessage", data=data
         )
-        print(response.json())
+        # print(response.json())
 
     @ staticmethod
-    def send_document(document, chat_id, caption, reply_markup):
+    def send_document(document, chat_id, caption):
         data = {
             "chat_id": chat_id,
             "caption": caption,
             'document': document,
             "parse_mode": "Markdown",
-            'reply_markup': reply_markup,
         }
         response = requests.post(
             f"{TELEGRAM_URL}{TUTORIAL_BOT_TOKEN}/sendDocument", data=data
@@ -113,10 +117,12 @@ class Webhook(View):
 
     @ staticmethod
     def check_file_uploading(t_message):
-        if "document" in t_message:
+        if Media.objects.filter(file_id=t_message['document']['file_id']).count() == 0:
             media = Media(file_id=t_message['document']['file_id'], file_name=t_message['document']['file_name'])
             media.save()
-            print('Uploading was completed ...')
+            return True
+        else:
+            return False
 
     @ staticmethod
     def check_channel_member(chat_id, user_id):
@@ -135,7 +141,10 @@ class Webhook(View):
 
     @ staticmethod
     def send_message_to_join_channel(chat_id):
-
+        text = """برای استفاده از امکانات بات لطفا در کانال ما عضو شوید
+@mediargroup
+همچنین با دنبال کردن ما در اینستاگرام میتوانید از توسعه بات حمایت کنید
+[@mediar_group](https://www.instagram.com/mediar_group/)"""
         reply_markup = {
             'inline_keyboard': [
                 [{'text': 'برو به کانال', 'url': 'https://t.me/dimorgan64'}],
@@ -145,7 +154,7 @@ class Webhook(View):
         reply_markup = json.dumps(reply_markup)
         data = {
             "chat_id": chat_id,
-            "text": "HELLO",
+            "text": text,
             'reply_markup': reply_markup,
             "parse_mode": "Markdown",
         }
@@ -167,5 +176,5 @@ class Webhook(View):
     @ staticmethod
     def search_in_database(query):
         results = Media.objects.filter(Q(title__icontains=query) | Q(author__icontains=query))
-        results = [[{'text': res.title}] for res in results]
+        results = [[{'text': "📚 " + res.title}] for res in results]
         return results
