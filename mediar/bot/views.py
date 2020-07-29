@@ -8,7 +8,7 @@ from django.db.models import Q
 
 TELEGRAM_URL = "https://api.telegram.org/bot"
 TUTORIAL_BOT_TOKEN = "1380036001:AAHWFdMS1SZ7b1ATUdC9KF_xqwOjmUwL-ck"
-BASE_URL = "https://eb720aeb2e14.ngrok.io"
+BASE_URL = "https://mediar.pythonanywhere.com"
 CHANNEL_ID = "@dimorgan64"
 
 # https://api.telegram.org/bot<token>/setWebhook?url=<url>/webhooks/tutorial/
