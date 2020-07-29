@@ -147,7 +147,7 @@ class Webhook(View):
 [@mediar_group](https://www.instagram.com/mediar_group/)"""
         reply_markup = {
             'inline_keyboard': [
-                [{'text': 'برو به کانال', 'url': 'https://t.me/dimorgan64'}],
+                [{'text': 'برو به کانال', 'url': 'https://t.me/mediargroup'}],
                 [{'text': 'عضو شدم', 'callback_data': 'joined'}]
             ],
         }
