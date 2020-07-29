@@ -135,7 +135,7 @@ class Webhook(View):
         )
         print(response.json())
         if response.status_code == 200:
-            if response.json()['result']['status'] in ["member", "creator", "admin"]:
+            if response.json()['result']['status'] in ["member", "creator", "administrator"]:
                 return True
         return False
 
