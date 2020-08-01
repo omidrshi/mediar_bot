@@ -3,7 +3,7 @@ import os
 import requests
 from django.http import JsonResponse
 from django.views import View
-from .models import Chat, Media
+from .models import Chat, Media, Ad
 from django.db.models import Q
 
 TELEGRAM_URL = "https://api.telegram.org/bot"
@@ -54,12 +54,17 @@ class Webhook(View):
 
         chat_obj = Chat.objects.filter(chat_id=t_chat['id']).first()
         if chat_obj:
-            chat_obj.first_name = t_chat['first_name']
+            chat_obj.first_name = t_chat['first_name'] if 'first_name' in t_chat else None
             chat_obj.last_name = t_chat['last_name'] if 'last_name' in t_chat else None
+            chat_obj.username = t_chat['username'] if 'username' in t_chat else None
             chat_obj.is_bot = t_message['from']['is_bot']
             chat_obj.save()
         else:
-            chat_obj = Chat(chat_id=t_chat['id'], first_name=t_chat['first_name'], last_name=t_chat['last_name'] if 'last_name' in t_chat else None, is_bot=t_message['from']['is_bot'])
+            chat_obj = Chat(chat_id=t_chat['id'],
+                            first_name=t_chat['first_name'] if 'first_name' in t_chat else None,
+                            last_name=t_chat['last_name'] if 'last_name' in t_chat else None,
+                            username=t_chat['username'] if 'username' in t_chat else None,
+                            is_bot=t_message['from']['is_bot'])
             chat_obj.save()
 
         # if get a message we should check the joining
@@ -84,6 +89,7 @@ class Webhook(View):
                 media.views_count = media.views_count + 1
                 media.save()
                 self.send_document(media.file_id, chat_obj.chat_id, media.title)
+                self.send_ads(chat_obj.chat_id)
                 return JsonResponse({"ok": "POST request processed"})
 
         results = self.search_in_database(text)
@@ -177,15 +183,33 @@ class Webhook(View):
         response = requests.post(
             f"{TELEGRAM_URL}{TUTORIAL_BOT_TOKEN}/answerCallbackQuery", data=data
         )
-        print(response.json())
+        # print(response.json())
 
     @ staticmethod
     def search_in_database(query):
-
         queries = query.split()
-        results = []
+        tmp = []
         for query in queries:
-            results.append(Media.objects.filter(Q(title__icontains=query) | Q(author__icontains=query)))
+            results = Media.objects.filter(Q(title__icontains=query) | Q(author__icontains=query))
+            results = [res.title for res in results]
+            tmp.extend(results)
 
-        results = [[{'text': "📚 " + res.title}] for res in results]
-        return results
+        tmp = [[{'text': "📚 " + t}] for t in list(set(tmp))]
+        return tmp
+
+    @ staticmethod
+    def send_ads(chat_id):
+        global BASE_URL
+        ad = Ad.objects.order_by('?')[0]
+        if ad:
+            ad.views_count = ad.views_count + 1
+            ad.save()
+            data = {
+                "chat_id": chat_id,
+                "caption": ad.caption,
+                'photo': BASE_URL + ad.image.url,
+                "parse_mode": "Markdown",
+            }
+            response = requests.post(
+                f"{TELEGRAM_URL}{TUTORIAL_BOT_TOKEN}/sendPhoto", data=data
+            )
