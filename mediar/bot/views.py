@@ -200,8 +200,9 @@ class Webhook(View):
     @ staticmethod
     def send_ads(chat_id):
         global BASE_URL
-        ad = Ad.objects.order_by('?')[0]
-        if ad:
+        ads = Ad.objects.order_by('?')
+        if ads:
+            ad = ads[0]
             ad.views_count = ad.views_count + 1
             ad.save()
             data = {
