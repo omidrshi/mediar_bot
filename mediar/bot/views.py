@@ -31,6 +31,7 @@ class Webhook(View):
     }
 
     WELCOME_MESSAGE = "برای جستجو کافیه عنوان کتاب یا نویسنده ی دلخواهتو وارد کنی. یادت باشه با جستجوی فارسی، کتاب های به زبان فارسی نمایش داده میشه. پس برای کتاب های انگلیسی، عنوان یا نویسنده رو انگلیسی جستجو کن."
+    WELCOME_MESSAGE_JOINED = "سلام!\nبه مدیار خوش اومدی.اینجا هر کتابی که بخوای رو‌ میتونی جستجو کنی و کاملا رایگان دانلود کنی.تازه این اول ماجراست! به زودی کلی چیز هیجان انگیز دیگه هم براتون داریم.\nپس مارو به دوستاتون معرفی کنید!"
 
     def post(self, request, *args, **kwargs):
 
@@ -66,7 +67,6 @@ class Webhook(View):
             self.send_message_to_join_channel(chat_obj.chat_id)
             return JsonResponse({"ok": "POST request processed"})
 
-        print(t_message)
         # Check if admin uploads a file
         if chat_obj.is_admin and "document" in t_message:
             self.check_file_uploading(t_message)
@@ -74,9 +74,15 @@ class Webhook(View):
 
         text = t_message["text"]
 
+        if text == "/start":
+            self.send_message(self.WELCOME_MESSAGE_JOINED, chat_obj.chat_id, '')
+            return JsonResponse({"ok": "POST request processed"})
+
         if text[0] == "📚":
             media = Media.objects.filter(title=text[2:]).first()
             if media:
+                media.views_count = media.views_count + 1
+                media.save()
                 self.send_document(media.file_id, chat_obj.chat_id, media.title)
                 return JsonResponse({"ok": "POST request processed"})
 
@@ -175,6 +181,11 @@ class Webhook(View):
 
     @ staticmethod
     def search_in_database(query):
-        results = Media.objects.filter(Q(title__icontains=query) | Q(author__icontains=query))
+
+        queries = query.split()
+        results = []
+        for query in queries:
+            results.append(Media.objects.filter(Q(title__icontains=query) | Q(author__icontains=query)))
+
         results = [[{'text': "📚 " + res.title}] for res in results]
         return results
