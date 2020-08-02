@@ -31,7 +31,7 @@ class Webhook(View):
     }
 
     WELCOME_MESSAGE = "برای جستجو کافیه عنوان کتاب یا نویسنده ی دلخواهتو وارد کنی. یادت باشه با جستجوی فارسی، کتاب های به زبان فارسی نمایش داده میشه. پس برای کتاب های انگلیسی، عنوان یا نویسنده رو انگلیسی جستجو کن."
-    WELCOME_MESSAGE_JOINED = "سلام!\nبه مدیار خوش اومدی.اینجا هر کتابی که بخوای رو‌ میتونی جستجو کنی و کاملا رایگان دانلود کنی.تازه این اول ماجراست! به زودی کلی چیز هیجان انگیز دیگه هم براتون داریم.\nپس مارو به دوستاتون معرفی کنید!"
+    WELCOME_MESSAGE_JOINED = "سلام!\nبه مدیار خوش اومدی.اینجا هر کتابی که بخوای رو‌ میتونی جستجو کنی و کاملا رایگان دانلود کنی.تازه این اول ماجراست! به زودی کلی چیز هیجان انگیز دیگه هم براتون داریم.\nپس مارو به دوستاتون معرفی کنید!\n🔰 برای جستجو کافیه عنوان کتاب یا نویسنده رو وارد کنی. اگه فارسی جستجو کنی کتاب فارسی تحویل میگیری پس برای دریافت کتاب انگلیسی اسمشو انگلیسی جستجو کن.\n❌در ضمن حواست باشه که غلط ننویسی!! تا جایی که اسمشو بلدی بنویس بقیه اش با ما😉"
 
     def post(self, request, *args, **kwargs):
 
@@ -67,6 +67,10 @@ class Webhook(View):
                             is_bot=t_message['from']['is_bot'])
             chat_obj.save()
 
+        if chat_obj.status == "banned":
+            self.send_message("شما اجازه دسترسی به ربات را ندارید !\nبرای اطلاعات بیشتر با پشتیبانی در ارتباط باشید", chat_obj.chat_id, '')
+            return JsonResponse({"ok": "POST request processed"})
+
         # if get a message we should check the joining
         if not self.check_channel_member(CHANNEL_ID, t_message['from']['id']):
             self.send_message_to_join_channel(chat_obj.chat_id)
@@ -88,7 +92,7 @@ class Webhook(View):
             if media:
                 media.views_count = media.views_count + 1
                 media.save()
-                self.send_document(media.file_id, chat_obj.chat_id, media.title)
+                self.send_document(media.file_id, chat_obj.chat_id, media.title + "\n\n@mediarbot")
                 self.send_ads(chat_obj.chat_id)
                 return JsonResponse({"ok": "POST request processed"})
 
@@ -190,7 +194,7 @@ class Webhook(View):
         queries = query.split()
         tmp = []
         for query in queries:
-            results = Media.objects.filter(Q(title__icontains=query) | Q(author__icontains=query))
+            results = Media.objects.filter(Q(title__icontains=query) | Q(author__icontains=query), Q(status="active"))
             results = [res.title for res in results]
             tmp.extend(results)
 
@@ -200,7 +204,7 @@ class Webhook(View):
     @ staticmethod
     def send_ads(chat_id):
         global BASE_URL
-        ads = Ad.objects.order_by('?')
+        ads = Ad.objects.filter(status="active").order_by('?')
         if ads:
             ad = ads[0]
             ad.views_count = ad.views_count + 1
