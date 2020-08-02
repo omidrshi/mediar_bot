@@ -5,6 +5,7 @@ from .models import Chat, Media, Ad
 @admin.register(Chat)
 class ChatAdmin(admin.ModelAdmin):
     list_display = ('first_name', 'last_name', 'username', 'chat_id')
+    readonly_fields = ('first_name', 'last_name', 'username', 'chat_id')
 
     def has_add_permission(self, request, obj=None):
         return False
