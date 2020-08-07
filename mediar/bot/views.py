@@ -192,12 +192,10 @@ class Webhook(View):
     @ staticmethod
     def search_in_database(query):
         queries = query.split()
-        tmp = []
+        results = Media.objects.filter(Q(status="active"))
         for query in queries:
-            results = Media.objects.filter(Q(title__icontains=query) | Q(author__icontains=query), Q(status="active"))
-            results = [res.title for res in results]
-            tmp.extend(results)
-
+            results = results.filter(Q(title__icontains=query) | Q(author__icontains=query))
+        tmp = [res.title for res in results]
         tmp = [[{'text': "📚 " + t}] for t in list(set(tmp))]
         return tmp
 
