@@ -5,6 +5,8 @@ from django.http import JsonResponse
 from django.views import View
 from .models import Chat, Media, Ad
 from django.db.models import Q
+from django.conf import settings
+import datetime
 
 TELEGRAM_URL = "https://api.telegram.org/bot"
 TUTORIAL_BOT_TOKEN = "1373827281:AAEwxMUTNNMeK34sOAVMfAaq6lnw0wLKF3c"
@@ -97,6 +99,7 @@ class Webhook(View):
                     self.send_ads(chat_obj.chat_id)
                     return JsonResponse({"ok": "POST request processed"})
 
+            self.save_in_search_history(text)
             results = self.search_in_database(text)
             self.send_message(f'{len(results)} مورد یافت شد ، حالا کتاب مورد نظر خودتو انتخاب کن. اگه چیزی که میخوای توی لیست نبود اصلا نگران نباش! ما در اسرع وقت برات حاضرش میکنیم!', chat_obj.chat_id, results)
             return JsonResponse({"ok": "POST request processed"})
@@ -219,3 +222,9 @@ class Webhook(View):
             response = requests.post(
                 f"{TELEGRAM_URL}{TUTORIAL_BOT_TOKEN}/sendPhoto", data=data
             )
+
+    @ staticmethod
+    def save_in_search_history(query):
+        path = os.path.join(settings.MEDIA_ROOT, 'history', datetime.datetime.now().strftime("%Y-%m-%d.txt"))
+        with open(path, "a+") as myfile:
+            myfile.write(query + "\n")
