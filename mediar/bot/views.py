@@ -226,5 +226,5 @@ class Webhook(View):
     @ staticmethod
     def save_in_search_history(query):
         path = os.path.join(settings.MEDIA_ROOT, 'history', datetime.datetime.now().strftime("%Y-%m-%d.txt"))
-        with open(path, "a+") as myfile:
+        with open(path, "a+", encoding="utf-8") as myfile:
             myfile.write(query + "\n")
