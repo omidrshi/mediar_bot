@@ -44,7 +44,7 @@ class Webhook(View):
             if 'data' in t_data['callback_query'] and t_data['callback_query']['data'] == 'joined':
                 if self.check_channel_member(CHANNEL_ID, t_data['callback_query']['from']['id']):
                     self.send_answer_to_callback(t_data['callback_query']['id'], 'تبریک ... شما عضو مدیار شدید')
-                    self.send_message(self.WELCOME_MESSAGE, t_data['callback_query']['message']['chat']['id'], '')
+                    self.send_message(self.WELCOME_MESSAGE_JOINED, t_data['callback_query']['message']['chat']['id'], '')
                 else:
                     self.send_answer_to_callback(t_data['callback_query']['id'], 'هنوز عضو کانال نشده اید !')
             self.send_answer_to_callback(t_data['callback_query']['id'], '')
