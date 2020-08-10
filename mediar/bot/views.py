@@ -95,7 +95,7 @@ class Webhook(View):
                 if media:
                     media.views_count = media.views_count + 1
                     media.save()
-                    self.send_document(media.file_id, chat_obj.chat_id, media.title + "\n\n@mediarbot")
+                    self.send_document(media.file_id, chat_obj.chat_id, "عنوان : " + media.title + "\n" + "نویسنده : " + media.author + "\n\n@mediarbot")
                     self.send_ads(chat_obj.chat_id)
                     return JsonResponse({"ok": "POST request processed"})
 
