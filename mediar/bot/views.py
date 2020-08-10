@@ -8,7 +8,7 @@ from django.db.models import Q
 
 TELEGRAM_URL = "https://api.telegram.org/bot"
 TUTORIAL_BOT_TOKEN = "1373827281:AAEwxMUTNNMeK34sOAVMfAaq6lnw0wLKF3c"
-BASE_URL = "https://mediar.pythonanywhere.com"
+BASE_URL = "https://b9e026cbfd55.ngrok.io"
 CHANNEL_ID = "@mediargroup"
 
 # https://api.telegram.org/bot<token>/setWebhook?url=<url>/webhooks/tutorial/
@@ -49,56 +49,59 @@ class Webhook(View):
             return JsonResponse({"ok": "POST request processed"})
 
         # if message is not Callback query extract info
-        t_message = t_data["message"]
-        t_chat = t_message["chat"]
+        if "message" in t_data:
+            t_message = t_data["message"]
+            t_chat = t_message["chat"]
 
-        chat_obj = Chat.objects.filter(chat_id=t_chat['id']).first()
-        if chat_obj:
-            chat_obj.first_name = t_chat['first_name'] if 'first_name' in t_chat else None
-            chat_obj.last_name = t_chat['last_name'] if 'last_name' in t_chat else None
-            chat_obj.username = t_chat['username'] if 'username' in t_chat else None
-            chat_obj.is_bot = t_message['from']['is_bot']
-            chat_obj.save()
-        else:
-            chat_obj = Chat(chat_id=t_chat['id'],
-                            first_name=t_chat['first_name'] if 'first_name' in t_chat else None,
-                            last_name=t_chat['last_name'] if 'last_name' in t_chat else None,
-                            username=t_chat['username'] if 'username' in t_chat else None,
-                            is_bot=t_message['from']['is_bot'])
-            chat_obj.save()
+            chat_obj = Chat.objects.filter(chat_id=t_chat['id']).first()
+            if chat_obj:
+                chat_obj.first_name = t_chat['first_name'] if 'first_name' in t_chat else None
+                chat_obj.last_name = t_chat['last_name'] if 'last_name' in t_chat else None
+                chat_obj.username = t_chat['username'] if 'username' in t_chat else None
+                chat_obj.is_bot = t_message['from']['is_bot']
+                chat_obj.save()
+            else:
+                chat_obj = Chat(chat_id=t_chat['id'],
+                                first_name=t_chat['first_name'] if 'first_name' in t_chat else None,
+                                last_name=t_chat['last_name'] if 'last_name' in t_chat else None,
+                                username=t_chat['username'] if 'username' in t_chat else None,
+                                is_bot=t_message['from']['is_bot'])
+                chat_obj.save()
 
-        if chat_obj.status == "banned":
-            self.send_message("شما اجازه دسترسی به ربات را ندارید !\nبرای اطلاعات بیشتر با پشتیبانی در ارتباط باشید", chat_obj.chat_id, '')
-            return JsonResponse({"ok": "POST request processed"})
-
-        # if get a message we should check the joining
-        if not self.check_channel_member(CHANNEL_ID, t_message['from']['id']):
-            self.send_message_to_join_channel(chat_obj.chat_id)
-            return JsonResponse({"ok": "POST request processed"})
-
-        # Check if admin uploads a file
-        if chat_obj.is_admin and "document" in t_message:
-            self.check_file_uploading(t_message)
-            return JsonResponse({"ok": "POST request processed"})
-
-        text = t_message["text"]
-
-        if text == "/start":
-            self.send_message(self.WELCOME_MESSAGE_JOINED, chat_obj.chat_id, '')
-            return JsonResponse({"ok": "POST request processed"})
-
-        if text[0] == "📚":
-            media = Media.objects.filter(title=text[2:]).first()
-            if media:
-                media.views_count = media.views_count + 1
-                media.save()
-                self.send_document(media.file_id, chat_obj.chat_id, media.title + "\n\n@mediarbot")
-                self.send_ads(chat_obj.chat_id)
+            if chat_obj.status == "banned":
+                self.send_message("شما اجازه دسترسی به ربات را ندارید !\nبرای اطلاعات بیشتر با پشتیبانی در ارتباط باشید", chat_obj.chat_id, '')
                 return JsonResponse({"ok": "POST request processed"})
 
-        results = self.search_in_database(text)
-        self.send_message(f'{len(results)} مورد یافت شد ، حالا کتاب مورد نظر خودتو انتخاب کن. اگه چیزی که میخوای توی لیست نبود اصلا نگران نباش! ما در اسرع وقت برات حاضرش میکنیم!', chat_obj.chat_id, results)
-        return JsonResponse({"ok": "POST request processed"})
+            # if get a message we should check the joining
+            if not self.check_channel_member(CHANNEL_ID, t_message['from']['id']):
+                self.send_message_to_join_channel(chat_obj.chat_id)
+                return JsonResponse({"ok": "POST request processed"})
+
+            # Check if admin uploads a file
+            if chat_obj.is_admin and "document" in t_message:
+                self.check_file_uploading(t_message)
+                return JsonResponse({"ok": "POST request processed"})
+
+            text = t_message["text"]
+
+            if text == "/start":
+                self.send_message(self.WELCOME_MESSAGE_JOINED, chat_obj.chat_id, '')
+                return JsonResponse({"ok": "POST request processed"})
+
+            if text[0] == "📚":
+                media = Media.objects.filter(title=text[2:]).first()
+                if media:
+                    media.views_count = media.views_count + 1
+                    media.save()
+                    self.send_document(media.file_id, chat_obj.chat_id, media.title + "\n\n@mediarbot")
+                    self.send_ads(chat_obj.chat_id)
+                    return JsonResponse({"ok": "POST request processed"})
+
+            results = self.search_in_database(text)
+            self.send_message(f'{len(results)} مورد یافت شد ، حالا کتاب مورد نظر خودتو انتخاب کن. اگه چیزی که میخوای توی لیست نبود اصلا نگران نباش! ما در اسرع وقت برات حاضرش میکنیم!', chat_obj.chat_id, results)
+            return JsonResponse({"ok": "POST request processed"})
+        else:
+            return JsonResponse({"ok": "No telegram message was sent"})
 
     @ staticmethod
     def send_message(message, chat_id, reply_markup):
