@@ -83,28 +83,30 @@ class Webhook(View):
             if chat_obj.is_admin and "document" in t_message:
                 self.check_file_uploading(t_message)
                 return JsonResponse({"ok": "POST request processed"})
+            if "text" in t_message :
+                text = t_message["text"]
 
-            text = t_message["text"]
-
-            if text == "/start":
-                self.send_message(self.WELCOME_MESSAGE_JOINED, chat_obj.chat_id, '')
-                return JsonResponse({"ok": "POST request processed"})
-
-            if text[0] == "📚":
-                media = Media.objects.filter(title=text[2:]).first()
-                if media:
-                    media.views_count = media.views_count + 1
-                    media.save()
-                    title = media.title if media.title != None else ""
-                    author = media.author if media.author != None else ""
-                    self.send_document(media.file_id, chat_obj.chat_id, "عنوان : " + title + "\n" + "نویسنده : " + author + "\n\n@mediarbot")
-                    self.send_ads(chat_obj.chat_id)
+                if text == "/start":
+                    self.send_message(self.WELCOME_MESSAGE_JOINED, chat_obj.chat_id, '')
                     return JsonResponse({"ok": "POST request processed"})
 
-            self.save_in_search_history(text)
-            results = self.search_in_database(text)
-            self.send_message(f'{len(results)} مورد یافت شد ، حالا کتاب مورد نظر خودتو انتخاب کن. اگه چیزی که میخوای توی لیست نبود اصلا نگران نباش! ما در اسرع وقت برات حاضرش میکنیم!', chat_obj.chat_id, results)
-            return JsonResponse({"ok": "POST request processed"})
+                if text[0] == "📚":
+                    media = Media.objects.filter(title=text[2:]).first()
+                    if media:
+                        media.views_count = media.views_count + 1
+                        media.save()
+                        title = media.title if media.title != None else ""
+                        author = media.author if media.author != None else ""
+                        self.send_document(media.file_id, chat_obj.chat_id, "عنوان : " + title + "\n" + "نویسنده : " + author + "\n\n@mediarbot")
+                        self.send_ads(chat_obj.chat_id)
+                        return JsonResponse({"ok": "POST request processed"})
+
+                self.save_in_search_history(text)
+                results = self.search_in_database(text)
+                self.send_message(f'{len(results)} مورد یافت شد ، حالا کتاب مورد نظر خودتو انتخاب کن. اگه چیزی که میخوای توی لیست نبود اصلا نگران نباش! ما در اسرع وقت برات حاضرش میکنیم!', chat_obj.chat_id, results)
+                return JsonResponse({"ok": "POST request processed"})
+            else :
+                return JsonResponse({"ok": "Undefined message"})
         else:
             return JsonResponse({"ok": "No telegram message was sent"})
 
